@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reqAddressList, reqDelAddressItem } from '@/services/address'
+import { useOrderStore } from '@/stores/modules/order'
 import type { addressItem } from '@/types/address'
 import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
@@ -23,7 +24,11 @@ const delAddressItem = async (id: string | number) => {
     },
   })
 }
-
+const orderStore = useOrderStore()
+const onSelectedAddr = (addr: addressItem) => {
+  orderStore.selectedAddress = addr
+  uni.navigateBack()
+}
 onShow(() => {
   getAddressList()
 })
@@ -37,7 +42,7 @@ onShow(() => {
         <view class="address-list">
           <uni-swipe-action>
             <uni-swipe-action-item v-for="item in addressList" :key="item.id">
-              <view class="item">
+              <view class="item" @tap="onSelectedAddr(item)">
                 <view class="item-content">
                   <view class="user">
                     {{ item.receiver }}
@@ -49,6 +54,7 @@ onShow(() => {
                     class="edit"
                     hover-class="none"
                     :url="`/pagesMember/address-form/address-form?id=${item.id}`"
+                    @tap.stop="() => {}"
                   >
                     修改
                   </navigator>

@@ -51,6 +51,12 @@ const guessRef = ref()
 const scrolltolower = () => {
   guessRef.value.getGuessLike()
 }
+
+const goToOrder = () => {
+  if (!CartList.value?.length) return
+  uni.navigateTo({ url: '/pagesOrder/createOrder/createOrder' })
+}
+
 onShow(() => {
   if (memberStore.profile) {
     getCartList()
@@ -127,7 +133,7 @@ onShow(() => {
         <text class="text">合计:</text>
         <text class="amount">{{ totalPrice }}</text>
         <view class="button-grounp">
-          <view class="button payment-button" :class="{ disabled: !totalCount }">
+          <view class="button payment-button" :class="{ disabled: !totalCount }" @tap="goToOrder">
             去结算({{ totalCount }})
           </view>
         </view>

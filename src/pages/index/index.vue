@@ -51,7 +51,7 @@ onLoad(() => {
 
 <template>
   <CustomNavbar />
-  <skeleton v-if="isLoading" />
+  <skeleton v-if="true" />
   <scroll-view
     v-else
     scroll-y

@@ -6,7 +6,7 @@ const httpInterceptor = {
   invoke(args: UniApp.RequestOptions) {
     const token = memberStore.profile?.token
     args.url = baseUrl + args.url
-    args.timeout = 5000
+    args.timeout = 15000
     args.header = {
       ...args.header,
       'source-client': 'miniapp',

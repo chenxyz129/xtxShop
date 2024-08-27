@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reqGoodsById } from '@/services/goods'
 import type { goods } from '@/types/goods.t'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import AddressPanel from './component/AddressPanel.vue'
 import ServicePanel from './component/ServicePanel.vue'
@@ -10,12 +10,15 @@ import type {
   SkuPopupLocaldata,
 } from '@/components/vk-data-goods-sku-popup/vk-data-goods-sku-popup'
 import { reqAddToCart } from '@/services/cart'
+import { useMemberStore } from '@/stores'
 // 获取屏幕边界到安全区域距离
 const { safeAreaInsets } = uni.getSystemInfoSync()
 const props = defineProps<{
   id: number
 }>()
+//获取商品信息
 let Goods = ref<goods>()
+let userAddresses = ref()
 const getGoodsById = async () => {
   const res = await reqGoodsById(props.id)
   Goods.value = res.result
@@ -42,6 +45,7 @@ const getGoodsById = async () => {
       }
     }),
   }
+  userAddresses.value = res.result.userAddresses
 }
 //查看主图
 let currIndex = ref<number>(0)
@@ -50,8 +54,8 @@ const swiperChange: UniHelper.SwiperOnChange = (event) => {
 }
 const checkImg = () => {
   uni.previewImage({
-    current: goods.value?.mainPictures[currIndex.value],
-    urls: goods.value!.mainPictures,
+    current: Goods.value?.mainPictures[currIndex.value],
+    urls: Goods.value!.mainPictures,
   })
 }
 
@@ -62,7 +66,14 @@ const tapService = () => {
   isService.value = true
   popup.value.open('bottom')
 }
+const memberStore = useMemberStore()
 const tapAddress = () => {
+  if (!memberStore.profile) {
+    uni.showToast({ title: '请先登录！', icon: 'error' })
+    setTimeout(() => {
+      uni.navigateTo({ url: '/pages/login/login' })
+    }, 500)
+  }
   isService.value = false
   popup.value.open('bottom')
 }
@@ -93,8 +104,18 @@ const addCart = async (event: any) => {
     }, 500)
   }
 }
+let addrId = ref<number | string>()
+let seletedAddr = ref()
+const getAddrId_Addr = (id: number | string, addr: string) => {
+  addrId.value = id
+  seletedAddr.value = addr
+}
 const buyNow = (event: any) => {
   console.log(event)
+  if (!addrId.value) return uni.showToast({ title: '请先选择收货地址！', icon: 'error' })
+  uni.navigateTo({
+    url: `/pagesOrder/createOrder/createOrder?addrId=${addrId.value}&skuId=${event._id}&count=${event.buy_num}`,
+  })
 }
 onLoad(() => {
   getGoodsById()
@@ -108,14 +129,14 @@ onLoad(() => {
       <!-- 商品主图 -->
       <view class="preview">
         <swiper circular @change="swiperChange">
-          <swiper-item v-for="(item, index) in goods?.mainPictures" :key="index">
+          <swiper-item v-for="(item, index) in Goods?.mainPictures" :key="index">
             <image mode="aspectFill" :src="item" @tap="checkImg" />
           </swiper-item>
         </swiper>
         <view class="indicator">
           <text class="current">{{ currIndex! + 1 }}</text>
           <text class="split">/</text>
-          <text class="total">{{ goods?.mainPictures.length }}</text>
+          <text class="total">{{ Goods?.mainPictures.length }}</text>
         </view>
       </view>
 
@@ -123,10 +144,10 @@ onLoad(() => {
       <view class="meta">
         <view class="price">
           <text class="symbol">¥</text>
-          <text class="number">{{ goods?.price }}</text>
+          <text class="number">{{ Goods?.price }}</text>
         </view>
-        <view class="name ellipsis">{{ goods?.name }} </view>
-        <view class="desc"> {{ goods?.desc }} </view>
+        <view class="name ellipsis">{{ Goods?.name }} </view>
+        <view class="desc"> {{ Goods?.desc }} </view>
       </view>
 
       <!-- 操作面板 -->
@@ -137,7 +158,9 @@ onLoad(() => {
         </view>
         <view class="item arrow">
           <text class="label">送至</text>
-          <text class="text ellipsis" @tap="tapAddress"> 请选择收货地址 </text>
+          <text class="text ellipsis" @tap="tapAddress">
+            {{ seletedAddr ? seletedAddr : '请选择收货地址' }}
+          </text>
         </view>
         <view class="item arrow">
           <text class="label">服务</text>
@@ -154,7 +177,7 @@ onLoad(() => {
       <view class="content">
         <view class="properties">
           <!-- 属性详情 -->
-          <view class="item" v-for="(item, index) in goods?.details.properties" :key="index">
+          <view class="item" v-for="(item, index) in Goods?.details.properties" :key="index">
             <text class="label">{{ item.name }}</text>
             <text class="value">{{ item.value }}</text>
           </view>
@@ -162,7 +185,7 @@ onLoad(() => {
         <!-- 图片详情 -->
         <image
           mode="widthFix"
-          v-for="(item, index) in goods?.details.pictures"
+          v-for="(item, index) in Goods?.details.pictures"
           :key="index"
           :src="item"
         ></image>
@@ -176,7 +199,7 @@ onLoad(() => {
       </view>
       <view class="content">
         <navigator
-          v-for="(item, index) in goods?.similarProducts"
+          v-for="(item, index) in Goods?.similarProducts"
           :key="index"
           class="goods"
           hover-class="none"
@@ -212,7 +235,12 @@ onLoad(() => {
   <!-- 收货地址和服务信息弹窗 -->
   <uni-popup ref="popup" type="top">
     <ServicePanel @close="popup.close()" v-if="isService" />
-    <AddressPanel @close="popup.close()" v-else />
+    <AddressPanel
+      @close="popup.close()"
+      v-else
+      :userAddresses="userAddresses"
+      @sendId_Addr="getAddrId_Addr"
+    />
   </uni-popup>
   <!-- 加入购物车、立即购买弹窗 -->
   <vk-data-goods-sku-popup

@@ -1,11 +1,25 @@
 <script setup lang="ts">
-//
-const emits = defineEmits<{
-  (e: 'close'): void
+import type { addressItem } from '@/types/address'
+import { ref } from 'vue'
+
+const props = defineProps<{
+  userAddresses: addressItem[]
 }>()
+const currIndex = ref()
+const checkAddress = (id: number | string, index: number, currItem: addressItem) => {
+  currIndex.value = index
+  emits('sendId_Addr', id, currItem.receiver + ' ' + currItem.fullLocation)
+  close()
+}
+const emits = defineEmits<{
+  close: []
+  sendId_Addr: [id: number | string, address: string]
+}>()
+
 const close = () => {
   emits('close')
 }
+defineExpose({})
 </script>
 
 <template>
@@ -16,20 +30,15 @@ const close = () => {
     <view class="title">配送至</view>
     <!-- 内容 -->
     <view class="content">
-      <view class="item">
-        <view class="user">李明 13824686868</view>
-        <view class="address">北京市顺义区后沙峪地区安平北街6号院</view>
-        <text class="icon icon-checked"></text>
-      </view>
-      <view class="item">
-        <view class="user">王东 13824686868</view>
-        <view class="address">北京市顺义区后沙峪地区安平北街6号院</view>
-        <text class="icon icon-ring"></text>
-      </view>
-      <view class="item">
-        <view class="user">张三 13824686868</view>
-        <view class="address">北京市朝阳区孙河安平北街6号院</view>
-        <text class="icon icon-ring"></text>
+      <view
+        class="item"
+        v-for="(item, index) in props.userAddresses"
+        :key="item.id"
+        @tap="checkAddress(item.id!, index, item)"
+      >
+        <view class="user">{{ `${item.receiver} ${item.contact}` }}</view>
+        <view class="address">{{ item.fullLocation }}</view>
+        <text class="icon" :class="{ 'icon-checked': currIndex == index }"></text>
       </view>
     </view>
     <view class="footer">

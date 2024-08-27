@@ -88,7 +88,7 @@ onLoad(() => {
           class="navigator"
           v-for="(item, index) in subType.goodsItems.items"
           :key="index"
-          :url="`/pages/goods/goods?id=`"
+          :url="`/pages/goods/goods?id=${item.id}`"
         >
           <image class="thumb" :src="item.picture"></image>
           <view class="name ellipsis">{{ item.name }}</view>

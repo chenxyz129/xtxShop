@@ -1,3 +1,5 @@
+import type { addressItem } from './address'
+
 export type goods = {
   id: string
   name: string
@@ -78,7 +80,7 @@ export type goods = {
   isPreSale: true
   isCollect: null
   recommends: null
-  userAddresses: null
+  userAddresses: addressItem
   evaluationInfo: null
   similarProducts: [
     {
